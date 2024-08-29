@@ -1,5 +1,6 @@
 import Hummingbird
 import Logging
+import PostgresNIO
 
 /// Application arguments protocol. We use a protocol so we can call
 /// `buildApplication` inside Tests as well as in the App executable. 
@@ -30,9 +31,22 @@ public func buildApplication(_ arguments: some AppArguments) async throws -> som
         return .ok
     }
     
-    BookController(repository: BookMemoryRepository()).addRoutes(to: router.group("books"))
+    var postgresRepository: BookPostgresRepository?
+    if !arguments.inMemoryTesting {
+        let client = PostgresClient(
+            configuration: .init(host: "localhost", username: "postgres", password: "postgres", database: "hummingbird", tls: .disable),
+            
+            backgroundLogger: logger
+        )
+        let repository = BookPostgresRepository(client: client, logger: logger)
+            postgresRepository = repository
+            BookController(repository: repository).addRoutes(to: router.group("books"))
+    } else {
+        BookController(repository: BookMemoryRepository()).addRoutes(to: router.group("books"))
+    }
     
-    let app = Application(
+    
+    var app = Application(
         router: router,
         configuration: .init(
             address: .hostname(arguments.hostname, port: arguments.port),
@@ -40,5 +54,13 @@ public func buildApplication(_ arguments: some AppArguments) async throws -> som
         ),
         logger: logger
     )
+    
+    if let postgresRepository {
+        app.addServices(postgresRepository.client)
+        app.beforeServerStarts {
+            try await postgresRepository.createTable()
+        }
+    }
+    
     return app
 }

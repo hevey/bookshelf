@@ -10,7 +10,7 @@ final class AppTests: XCTestCase {
         let hostname = "127.0.0.1"
         let port = 0
         let logLevel: Logger.Level? = .trace
-        let inMemoryTesting = true
+        let inMemoryTesting = false
     }
     
     struct CreateRequest: Encodable {
