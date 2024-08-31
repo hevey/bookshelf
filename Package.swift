@@ -1,34 +1,48 @@
-// swift-tools-version:5.9
-// The swift-tools-version declares the minimum version of Swift required to build this package.
-
+// swift-tools-version:5.10
 import PackageDescription
 
 let package = Package(
     name: "Bookshelf",
-    platforms: [.macOS(.v14), .iOS(.v17), .tvOS(.v17)],
-    products: [
-        .executable(name: "App", targets: ["App"]),
+    platforms: [
+       .macOS(.v13)
     ],
     dependencies: [
-        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0-rc.4"),
-        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
-        .package(url: "https://github.com/vapor/postgres-nio.git", from: "1.22.1")
+        // 💧 A server-side Swift web framework.
+        .package(url: "https://github.com/vapor/vapor.git", from: "4.99.3"),
+        // 🗄 An ORM for SQL and NoSQL databases.
+        .package(url: "https://github.com/vapor/fluent.git", from: "4.9.0"),
+        // 🪶 Fluent driver for SQLite.
+        .package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.6.0"),
+        // 🍃 An expressive, performant, and extensible templating language built for Swift.
+        .package(url: "https://github.com/vapor/leaf.git", from: "4.3.0"),
+        // 🔵 Non-blocking, event-driven networking for Swift. Used for custom executors
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0"),
     ],
     targets: [
-        .executableTarget(name: "App",
+        .executableTarget(
+            name: "App",
             dependencies: [
-                .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .product(name: "Hummingbird", package: "hummingbird"),
-                .product(name: "PostgresNIO", package: "postgres-nio")
+                .product(name: "Fluent", package: "fluent"),
+                .product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"),
+                .product(name: "Leaf", package: "leaf"),
+                .product(name: "Vapor", package: "vapor"),
+                .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOPosix", package: "swift-nio"),
             ],
-            path: "Sources/App"
+            swiftSettings: swiftSettings
         ),
-        .testTarget(name: "AppTests",
+        .testTarget(
+            name: "AppTests",
             dependencies: [
-                .byName(name: "App"),
-                .product(name: "HummingbirdTesting", package: "hummingbird")
+                .target(name: "App"),
+                .product(name: "XCTVapor", package: "vapor"),
             ],
-            path: "Tests/AppTests"
+            swiftSettings: swiftSettings
         )
     ]
 )
+
+var swiftSettings: [SwiftSetting] { [
+    .enableUpcomingFeature("DisableOutwardActorInference"),
+    .enableExperimentalFeature("StrictConcurrency"),
+] }
